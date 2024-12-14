@@ -1,0 +1,30 @@
+{
+    "files.associations": {
+        "tuple": "cpp",
+        "stdexcept": "cpp",
+        "iosfwd": "cpp",
+        "fstream": "cpp",
+        "iostream": "cpp",
+        "random": "cpp",
+        "limits": "cpp",
+        "ostream": "cpp",
+        "array": "cpp",
+        "*.tcc": "cpp",
+        "memory": "cpp",
+        "istream": "cpp",
+        "functional": "cpp",
+        "utility": "cpp",
+        "string": "cpp",
+        "any": "cpp",
+        "charconv": "cpp",
+        "compare": "cpp",
+        "ranges": "cpp",
+        "ratio": "cpp",
+        "type_traits": "cpp",
+        "variant": "cpp",
+        "*.ipp": "cpp",
+        "string_view": "cpp",
+        "initializer_list": "cpp",
+        "span": "cpp"
+    }
+}

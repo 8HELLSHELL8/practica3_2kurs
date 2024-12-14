@@ -1,0 +1,10 @@
+order_id,user_id,pair_id,quantity,price,type,closed
+1,1,7,15.000000,1.100000,sell,close
+2,2,7,15.000000,1.100000,buy,close
+3,1,7,15.000000,1.100000,sell,close
+4,2,7,15.000000,1.100000,buy,close
+5,1,7,1000.000000,1.100000,sell,close
+6,1,8,1000.100000,1.100000,sell,close
+7,1,8,1000.100000,1.100000,sell,open
+8,1,7,90.000000,1.100000,sell,open
+9,2,7,10.000000,1.800000,buy,close
