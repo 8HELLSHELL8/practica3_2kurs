@@ -42,13 +42,6 @@ namespace json = boost::json;
 using namespace std;
 using tcp = net::ip::tcp;
 
-mutex mtx;
-mutex menu_mtx;
-mutex delMutex;
-mutex insertMutex;
-mutex selectMutex;
-
-
 
 string getLastFolderName(const string& path) {
 
@@ -341,7 +334,6 @@ void uploadTable(LinkedList<HASHtable<string>> table, string tableName)
 
 void insert(LinkedList<string> values, string tableName)
 {
-    lock_guard<mutex> insertionMUTEX(insertMutex);
     lockTable(tableName);
     LinkedList<HASHtable<string>> table = readTable(tableName);
     
@@ -427,8 +419,9 @@ bool whereInside(LinkedList<string> commandList)
     return commandList.search("WHERE");
 }
 
-void handleINPUT(LinkedList<string> commandList)
+void handleINPUT(LinkedList<string> commandList, mutex& mtx)
 {
+    lock_guard<mutex> lg(mtx);
     if (commandList.get(0) == "INSERT" && commandList.get(1) == "INTO" && whereInside(commandList) == 0)
     {
         LinkedList<string> values = parseValuesForInsert(commandList);
@@ -592,9 +585,10 @@ bool checkCondition(string table1Name, HASHtable<string> row1,
 
 }
 
-void handleSELECT(LinkedList<string> inputList, int clientSocket)
+void handleSELECT(LinkedList<string> inputList, int clientSocket, mutex& mtx)
  {
-    lock_guard<mutex> selectionMUTEX(selectMutex);
+    
+    lock_guard<mutex> lg(mtx);
     LinkedList<string> selectedColumns = getSelectedTablesSELECT(inputList);
     LinkedList<string> selectedTables = getSelectedTablesFROM(inputList);
 
@@ -689,9 +683,10 @@ bool checkCondition(string table1Name, HASHtable<string> row1,
 
 }
 
-void handleDELETE(LinkedList<string> inputList)
+void handleDELETE(LinkedList<string> inputList, mutex& mtx)
 {
-    lock_guard<mutex> deletionMUTEX(delMutex);
+    lock_guard<mutex> lg(mtx);
+
     LinkedList<string> selectedTables = getSelectedTablesFROM(inputList);
     string tableName = selectedTables.get(0);
     LinkedList<HASHtable<string>> table = readTable(tableName);
@@ -747,6 +742,12 @@ void handleDELETE(LinkedList<string> inputList)
 
 void MENU(auto clientInput, auto clientSocket)
 {
+
+    mutex menu_mtx;
+    mutex select_mtx;
+    mutex delete_mtx;
+    mutex insert_mtx;
+
     try
     {   
         LinkedList<string> inputList = parseCommand(clientInput);
@@ -761,15 +762,15 @@ void MENU(auto clientInput, auto clientSocket)
 
         if (operation == "SELECT")
         {
-            handleSELECT(inputList, clientSocket);
+            handleSELECT(inputList, clientSocket, select_mtx);
         }
         else if (operation == "DELETE")
         {
-            handleDELETE(inputList);
+            handleDELETE(inputList, delete_mtx);
         }
         else if (operation == "INSERT")
         {
-            handleINPUT(inputList);
+            handleINPUT(inputList, insert_mtx);
         }
         else
         {
@@ -810,6 +811,7 @@ sockaddr_in defineServer(const string& ipAddress, const int& port)
 void handleClient(int clientSocket)
 {
     char buffer[1024];
+    mutex mtx;
     
     int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
     if (bytesReceived > 0) {
@@ -840,6 +842,7 @@ void handleClient(int clientSocket)
 
 void serverListener(int serverSocket)
 {
+    mutex mtx;
     sockaddr_in clientAddress;
     socklen_t clientAddressSize = sizeof(clientAddress);
     while (true)
@@ -847,6 +850,7 @@ void serverListener(int serverSocket)
         int clientSocket = accept(serverSocket, (sockaddr*)&clientAddress, &clientAddressSize);
         if (clientSocket == -1)
         {
+            lock_guard<mutex> lg(mtx);
             cerr << "Error occurred while connecting to client!" << endl;
             continue;
         }
@@ -1394,10 +1398,13 @@ bool canCreateOrder(string& userID, string& lotID, double newOrderAmount, double
 }
 
 
-void handle_request(const http::request<http::string_body>& req, http::response<http::string_body>& res)
+void handle_request(const http::request<http::string_body>& req, http::response<http::string_body>& res, mutex& apiLock)
 {
+    lock_guard<mutex> lg(apiLock);
+
     try
     {
+
         string targetPath = string(req.target());
         if (req.method() == http::verb::post)
         {
@@ -1702,7 +1709,6 @@ void handle_request(const http::request<http::string_body>& req, http::response<
         }
         else if (req.method() == http::verb::delete_)
         {
-
             auto userToken = req.find("X-USER-KEY");
                 if (!checkTokenPrescence(userToken, req))
                 {
@@ -1810,6 +1816,7 @@ void handle_request(const http::request<http::string_body>& req, http::response<
 
 void do_session(std::shared_ptr<tcp::socket> socket) 
 {
+    mutex api_mtx;
     try 
     {
         beast::flat_buffer buffer;
@@ -1820,7 +1827,7 @@ void do_session(std::shared_ptr<tcp::socket> socket)
 
         // Формирование HTTP-ответа
         http::response<http::string_body> res;
-        handle_request(req, res);
+        handle_request(req, res, ref(api_mtx));
 
         // Отправка HTTP-ответа
         http::write(*socket, res);
