@@ -1,22 +1,25 @@
+#pragma once
 #include <iostream>
+#include <stdint.h>
+
 
 template<typename T>
 struct Hbuckets
 {
 private:
-   // Óçåë äëÿ õðàíåíèÿ äàííûõ
+   
    template<typename U>
    struct Node
    {
-       std::string key;       // Êëþ÷
-       T value;          // Çíà÷åíèå
-       Node<U>* next;    // Óêàçàòåëü íà ñëåäóþùèé óçåë
+       std::string key;       
+       T value;          
+       Node<U>* next;    
 
        Node(const std::string& key, const T& value) : key(key), value(value), next(nullptr) {}
    };
 
-   Node<T>* head;    // Ãîëîâà ñïèñêà
-   Node<T>* tail;    // Õâîñò ñïèñêà
+   Node<T>* head;    
+   Node<T>* tail;    
 
 public:
    Hbuckets() : head(nullptr), tail(nullptr) {}

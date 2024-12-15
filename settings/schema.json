@@ -1,0 +1,11 @@
+{
+    "name":"Cryptospot",
+    "tuples_limit":1000,
+    "structure":{
+        "user":["user_id", "username", "key"],
+        "order":["order_id", "user_id", "pair_id", "quantity", "price", "type", "closed"],
+        "pair":["pair_id", "first_lot_id", "second_lot_id"],
+        "lot":["lot_id","name"],
+        "user_lot":["user_id", "lot_id", "quantity"]
+    }
+}
